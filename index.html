@@ -1,22 +1,205 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Essais tricot – FFTricot</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FFTricot – Essais</title>
+
+  <!-- Discrétion : demande aux moteurs de recherche de NE PAS indexer -->
+  <meta name="robots" content="noindex, nofollow" />
+
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #faf8f5;
-      color: #333;
-      text-align: center;
-      padding: 40px;
+    :root{
+      --fond:#faf8f5; --encre:#2f2a28; --accent:#a05a7e; --bord:#d7ccc8;
+      --case-bg:#ffffff; --case-alt:#dcdcdc;
     }
-    h1 { color: #a05a7e; }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--encre); background:var(--fond);
+    }
+    header{
+      padding:24px 16px; text-align:center; border-bottom:1px solid var(--bord);
+    }
+    header h1{margin:0 0 6px; color:var(--accent)}
+    nav{
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+    }
+    nav a{
+      text-decoration:none; border:1px solid var(--bord); padding:8px 12px; border-radius:999px;
+      color:var(--encre); background:#fff;
+    }
+    main{max-width:980px; margin:24px auto; padding:0 16px}
+    section{background:#fff; border:1px solid var(--bord); border-radius:12px; padding:18px; margin:18px 0}
+    h2{margin-top:0; color:var(--accent)}
+
+    /* Grille tricot */
+    .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px}
+    .controls label{font-size:14px}
+    .controls input{width:72px; padding:6px 8px}
+    .controls button{
+      padding:8px 12px; border-radius:8px; border:1px solid var(--bord); background:#fff; cursor:pointer;
+    }
+    .legend{font-size:14px; opacity:.9; margin:8px 0 12px}
+    .grid-wrap{overflow:auto; border:1px solid var(--bord); border-radius:10px; background:#fff}
+    .grid{border-collapse:collapse; user-select:none}
+    .grid td{
+      width:26px; height:26px; border:1px solid #bbb; background:var(--case-bg);
+      text-align:center; vertical-align:middle; font-size:12px; line-height:1;
+    }
+    .grid td.purl{ background:var(--case-alt); }
+    .hint{font-size:12px; opacity:.8}
+
+    /* Section image */
+    .img-box{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+    .img-box img{max-width:100%; border-radius:10px; border:1px solid var(--bord)}
+
+    footer{padding:24px 16px; text-align:center; font-size:12px; opacity:.7}
   </style>
 </head>
 <body>
-  <h1>Bienvenue sur mon site de tricot 🧶</h1>
-  <p>Essais de légendes et grilles de points.</p>
+  <header>
+    <h1>FFTricot – site d’essai 🧶</h1>
+    <p>Grille de points interactive, image d’échantillon & style de base.</p>
+    <nav>
+      <a href="#grille">Grille</a>
+      <a href="#image">Image</a>
+      <a href="#a-propos">À propos</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- SECTION GRILLE -->
+    <section id="grille">
+      <h2>Grille de tricot interactive</h2>
+      <div class="controls">
+        <label>Lignes <input type="number" id="rows" value="12" min="1" max="200"></label>
+        <label>Colonnes <input type="number" id="cols" value="12" min="1" max="200"></label>
+        <button id="build">Créer / Recréer</button>
+        <button id="clear">Tout en endroit</button>
+        <button id="invert">Inverser</button>
+        <button id="exportPng">Télécharger en PNG</button>
+        <span id="count" class="hint"></span>
+      </div>
+
+      <div class="legend">
+        <strong>Légende :</strong> case blanche = <em>endroit</em>, case grise = <em>envers</em>.  
+        Astuce : tape/clic pour changer une case; glisse ton doigt pour peindre plusieurs cases.
+      </div>
+
+      <div class="grid-wrap">
+        <table id="grid" class="grid" aria-label="Grille de tricot"></table>
+      </div>
+    </section>
+
+    <!-- SECTION IMAGE -->
+    <section id="image">
+      <h2>Image d’échantillon / logo</h2>
+      <div class="img-box">
+        <img id="sampleImg" src="https://placehold.co/640x360?text=Ton+image+ici" alt="Aperçu image" />
+        <div>
+          <p>Pour utiliser ta propre image :</p>
+          <ol>
+            <li>Dans ton dépôt, clique <strong>Code → Upload files</strong> et glisse ton image (ex. <code>echantillon.jpg</code>).</li>
+            <li>Une fois envoyée, clique sur l’image puis sur <strong>View raw</strong> : copie l’URL.</li>
+            <li>Remplace l’attribut <code>src</code> ci-dessus par ton lien brut.</li>
+          </ol>
+          <p class="hint">Tu peux aussi garder tes images dans un dossier <code>assets/</code> pour t’organiser.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION A PROPOS -->
+    <section id="a-propos">
+      <h2>À propos</h2>
+      <p>Site de tests privés pour maquettes de grilles et légendes. Ce site n’est pas indexé par les moteurs de recherche.</p>
+    </section>
+  </main>
+
+  <footer>© FFTricot – brouillon d’essai</footer>
+
+  <script>
+    // ------- Grille de tricot interactive -------
+    const gridEl = document.getElementById('grid');
+    const rowsEl = document.getElementById('rows');
+    const colsEl = document.getElementById('cols');
+    const countEl = document.getElementById('count');
+    let isPainting = false;
+
+    function updateCount(){
+      const total = gridEl.querySelectorAll('td').length;
+      const purl  = gridEl.querySelectorAll('td.purl').length;
+      countEl.textContent = `Total: ${total} • Envers: ${purl} • Endroit: ${total - purl}`;
+    }
+
+    function buildGrid(r, c){
+      gridEl.innerHTML = '';
+      for(let i=0;i<r;i++){
+        const tr = document.createElement('tr');
+        for(let j=0;j<c;j++){
+          const td = document.createElement('td');
+          td.setAttribute('role','gridcell');
+          td.addEventListener('mousedown', e => { e.preventDefault(); isPainting = true; td.classList.toggle('purl'); updateCount(); });
+          td.addEventListener('mousemove', () => { if(isPainting) { td.classList.add('purl'); updateCount(); } });
+          td.addEventListener('touchstart', e => { e.preventDefault(); isPainting = true; td.classList.toggle('purl'); updateCount(); }, {passive:false});
+          td.addEventListener('touchmove', e => { e.preventDefault(); const touch = e.touches[0]; const el = document.elementFromPoint(touch.clientX, touch.clientY); if(el && el.tagName==='TD'){ el.classList.add('purl'); updateCount(); } }, {passive:false});
+          td.addEventListener('click', () => { td.classList.toggle('purl'); updateCount(); });
+          tr.appendChild(td);
+        }
+        gridEl.appendChild(tr);
+      }
+      updateCount();
+    }
+
+    document.addEventListener('mouseup', ()=> isPainting=false);
+    document.addEventListener('touchend', ()=> isPainting=false);
+
+    document.getElementById('build').addEventListener('click', ()=>{
+      const r = Math.max(1, Math.min(200, parseInt(rowsEl.value||12)));
+      const c = Math.max(1, Math.min(200, parseInt(colsEl.value||12)));
+      buildGrid(r,c);
+    });
+
+    document.getElementById('clear').addEventListener('click', ()=>{
+      gridEl.querySelectorAll('td').forEach(td => td.classList.remove('purl')); updateCount();
+    });
+
+    document.getElementById('invert').addEventListener('click', ()=>{
+      gridEl.querySelectorAll('td').forEach(td => td.classList.toggle('purl')); updateCount();
+    });
+
+    // Export PNG : dessine la grille dans un canvas puis télécharge
+    document.getElementById('exportPng').addEventListener('click', ()=>{
+      const cells = Array.from(gridEl.querySelectorAll('td'));
+      if(!cells.length) return;
+
+      const rows = gridEl.rows.length;
+      const cols = gridEl.rows[0].cells.length;
+      const size = 28; // px par case dans le PNG
+      const pad  = 2;  // bord interne
+
+      const canvas = document.createElement('canvas');
+      canvas.width  = cols * size;
+      canvas.height = rows * size;
+      const ctx = canvas.getContext('2d');
+
+      for(let i=0;i<rows;i++){
+        for(let j=0;j<cols;j++){
+          const td = gridEl.rows[i].cells[j];
+          ctx.fillStyle = td.classList.contains('purl') ? '#dcdcdc' : '#ffffff';
+          ctx.fillRect(j*size, i*size, size, size);
+          ctx.strokeStyle = '#bbbbbb';
+          ctx.strokeRect(j*size + .5, i*size + .5, size-1, size-1);
+        }
+      }
+      const a = document.createElement('a');
+      a.download = 'grille-tricot.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    });
+
+    // chargement initial
+    buildGrid(parseInt(rowsEl.value), parseInt(colsEl.value));
+  </script>
 </body>
 </html>
