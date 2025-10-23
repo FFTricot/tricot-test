@@ -6,106 +6,86 @@
 <title>FFTricot – Grille & rendu</title>
 <meta name="robots" content="noindex, nofollow" />
 <style>
-  :root{
-    --fond:#faf8f5; --encre:#2f2a28; --accent:#a05a7e; --bord:#d7ccc8;
-    --case:#ffffff; --alt:#e9e9e9;
-  }
-  *{box-sizing:border-box}
-  body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--encre); background:var(--fond)}
-  header{padding:24px 16px; text-align:center; border-bottom:1px solid var(--bord)}
-  header h1{margin:0 0 6px; color:var(--accent)}
-  main{max-width:1100px; margin:24px auto; padding:0 16px}
-  section{background:#fff; border:1px solid var(--bord); border-radius:12px; padding:18px; margin:18px 0}
-  h2{margin-top:0; color:var(--accent)}
-  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px}
-  .controls label{font-size:14px}
-  .controls input[type="number"]{width:76px; padding:6px 8px}
-  .btn{padding:8px 12px; border-radius:8px; border:1px solid var(--bord); background:#fff; cursor:pointer}
-  .seg{display:flex; border:1px solid var(--bord); border-radius:999px; overflow:hidden}
-  .seg button{border:0; padding:8px 12px; background:#fff; cursor:pointer}
-  .seg button.active{background:var(--alt)}
-  .grid-wrap{overflow:auto; border:1px solid var(--bord); border-radius:10px; background:#fff}
-  table.grid{border-collapse:collapse; user-select:none}
-  table.grid td{
-    width:28px; height:28px; border:1px solid #bbb; background:var(--case);
-    text-align:center; vertical-align:middle; font-size:12px; line-height:1; position:relative;
-  }
+  :root{--fond:#faf8f5;--encre:#2f2a28;--accent:#a05a7e;--bord:#d7ccc8;--case:#fff;--alt:#ececec}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--encre);background:var(--fond)}
+  header{padding:20px 14px;text-align:center;border-bottom:1px solid var(--bord)} header h1{margin:0 0 6px;color:var(--accent)}
+  main{max-width:1100px;margin:20px auto;padding:0 14px} section{background:#fff;border:1px solid var(--bord);border-radius:12px;padding:16px;margin:16px 0}
+  h2{margin-top:0;color:var(--accent)}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+  .btn{padding:8px 12px;border-radius:8px;border:1px solid var(--bord);background:#fff;cursor:pointer}
+  .seg{display:flex;border:1px solid var(--bord);border-radius:999px;overflow:hidden}
+  .seg button{border:0;padding:8px 12px;background:#fff;cursor:pointer}
+  .seg .active{background:var(--alt)}
+  .grid-wrap{overflow:auto;border:1px solid var(--bord);border-radius:10px}
+  table.grid{border-collapse:collapse;user-select:none}
+  table.grid td{width:28px;height:28px;border:1px solid #bbb;background:var(--case);text-align:center;vertical-align:middle;font-size:12px;position:relative}
   td.purl{background:var(--alt)}
   td .sym{font-size:12px}
-  .palette{display:flex; gap:6px; align-items:center; flex-wrap:wrap}
-  .sw{width:22px; height:22px; border-radius:6px; border:1px solid #aaa; cursor:pointer}
-  .legend{font-size:13px; opacity:.95; display:flex; gap:16px; flex-wrap:wrap; margin:8px 0 12px}
-  .legend span{display:inline-flex; align-items:center; gap:6px}
-  .legend .chip{display:inline-block; min-width:20px; text-align:center; padding:2px 6px; border:1px solid #bbb; border-radius:6px; background:#fff; font-size:12px}
-  .hint{font-size:12px; opacity:.75}
-  .canvas-wrap{display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap}
-  canvas{border:1px solid var(--bord); border-radius:10px; background:#fff; max-width:100%}
+  .hint{font-size:12px;opacity:.75}
+
+  /* palettes cliquables */
+  .palette{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{border:1px solid var(--bord);border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer;font-size:13px}
+  .chip.active{background:var(--alt)}
+  .sw{width:24px;height:24px;border-radius:6px;border:1px solid #aaa;cursor:pointer}
+  .sw.active{outline:2px solid var(--accent)}
+  canvas{border:1px solid var(--bord);border-radius:10px;background:#fff;max-width:100%}
 </style>
 </head>
 <body>
 <header>
   <h1>FFTricot – Grille interactive & rendu</h1>
-  <p>Endroit/Envers, symboles (YO, K2tog/SSK…), couleurs Jacquard, et rendu sous la grille.</p>
+  <p>Choix de points par boutons, palette de couleurs cliquable, rendu dessous.</p>
 </header>
 
 <main>
-  <section id="grille">
-    <h2>1) Construire la grille</h2>
+  <section>
+    <h2>1) Grille</h2>
     <div class="controls">
-      <label>Lignes <input type="number" id="rows" value="16" min="1" max="240"></label>
-      <label>Colonnes <input type="number" id="cols" value="16" min="1" max="240"></label>
+      <label>Lignes <input type="number" id="rows" value="16" min="1" max="240" style="width:72px;padding:6px"></label>
+      <label>Colonnes <input type="number" id="cols" value="16" min="1" max="240" style="width:72px;padding:6px"></label>
       <button class="btn" id="build">Créer/Recréer</button>
       <button class="btn" id="clear">Vider</button>
       <button class="btn" id="invert">Inverser K/P</button>
       <span id="count" class="hint"></span>
     </div>
 
-    <h2>2) Mode d’édition</h2>
+    <h2>2) Modes & outils</h2>
     <div class="controls">
-      <div class="seg" role="tablist" aria-label="Modes">
-        <button class="active" id="mode-knit" title="Endroit/Envers">K/P</button>
-        <button id="mode-symbol" title="Symboles (lace, déc.)">Symboles</button>
-        <button id="mode-color" title="Couleurs (jacquard)">Couleurs</button>
+      <div class="seg" role="tablist">
+        <button id="mode-knit" class="active" title="Endroit/Envers">K/P</button>
+        <button id="mode-symbol" title="Symboles">Symboles</button>
+        <button id="mode-color" title="Couleurs">Couleurs</button>
       </div>
-      <span class="hint">Astuce : clique/tape pour peindre; glisse ton doigt pour plusieurs cases.</span>
+      <span class="hint">Tape/clic pour peindre; glisse pour plusieurs cases.</span>
     </div>
 
+    <!-- Palette de symboles (boutons) -->
     <div class="controls" id="symbolBar" style="display:none">
-      <label>Symbole :
-        <select id="symbolSelect">
-          <option value="">(vide)</option>
-          <option value="•">• (maille)</option>
-          <option value="YO">YO (jeté)</option>
-          <option value="k2tog">k2tog (2 m. ens. endroit)</option>
-          <option value="ssk">SSK (surjet simple)</option>
-          <option value="k3tog">k3tog (3 m. ens.)</option>
-          <option value="sl">sl (glisser)</option>
-          <option value="no">× (no stitch)</option>
-        </select>
-      </label>
-      <span class="hint">La case garde aussi son état K/P pour le rendu relief.</span>
+      <div class="palette" id="symbolPalette" aria-label="Symboles">
+        <span class="chip" data-sym="">(vide)</span>
+        <span class="chip" data-sym="•">• maille</span>
+        <span class="chip" data-sym="YO">YO jeté</span>
+        <span class="chip" data-sym="k2tog">k2tog 2 ens.</span>
+        <span class="chip" data-sym="SSK">SSK surjet</span>
+        <span class="chip" data-sym="k3tog">k3tog</span>
+        <span class="chip" data-sym="sl">sl glisser</span>
+        <span class="chip" data-sym="no">× no stitch</span>
+      </div>
     </div>
 
+    <!-- Palette de couleurs (boutons) -->
     <div class="controls" id="colorBar" style="display:none">
-      <div class="palette" id="palette">
+      <div class="palette" id="colorPalette" aria-label="Couleurs">
         <div class="sw" data-col="#000000" style="background:#000"></div>
         <div class="sw" data-col="#ffffff" style="background:#fff"></div>
+        <div class="sw" data-col="#a05a7e" style="background:#a05a7e"></div>
         <div class="sw" data-col="#c0392b" style="background:#c0392b"></div>
         <div class="sw" data-col="#27ae60" style="background:#27ae60"></div>
         <div class="sw" data-col="#2980b9" style="background:#2980b9"></div>
         <div class="sw" data-col="#f1c40f" style="background:#f1c40f"></div>
-        <input type="color" id="picker" value="#a05a7e" />
+        <input type="color" id="picker" value="#a05a7e" style="margin-left:8px">
       </div>
-      <span class="hint">Couleur appliquée à la case; le relief K/P reste pris en compte au rendu.</span>
-    </div>
-
-    <div class="legend" id="legend">
-      <span><span class="chip">K</span> endroit</span>
-      <span><span class="chip">P</span> envers</span>
-      <span><span class="chip">YO</span> jeté</span>
-      <span><span class="chip">k2tog</span> 2 m. ens.</span>
-      <span><span class="chip">SSK</span> surjet</span>
-      <span><span class="chip">×</span> no stitch</span>
     </div>
 
     <div class="grid-wrap">
@@ -117,134 +97,86 @@
     </div>
   </section>
 
-  <section id="render">
-    <h2>3) Rendu “tricot” (aperçu visuel)</h2>
-    <div class="canvas-wrap">
-      <div>
-        <canvas id="knitCanvas" width="640" height="640"></canvas>
-        <div class="controls">
-          <button class="btn" id="renderBtn">Actualiser le rendu</button>
-          <button class="btn" id="exportRender">Exporter le rendu (PNG)</button>
-        </div>
-        <p class="hint">Le rendu essaie d’imiter la forme d’une maille : “V” pour endroit, petit pont pour envers. La couleur (jacquard) et les symboles influencent l’aspect.</p>
-      </div>
+  <section>
+    <h2>3) Rendu</h2>
+    <canvas id="knitCanvas" width="640" height="640"></canvas>
+    <div class="controls">
+      <button class="btn" id="renderBtn">Actualiser le rendu</button>
+      <button class="btn" id="exportRender">Exporter le rendu (PNG)</button>
     </div>
+    <p class="hint">Prochaines étapes possibles : texture laine réaliste, PDF patron, torsades, répétitions, etc.</p>
   </section>
 </main>
 
 <script>
-  // --- Modèle de données par case ---
-  // { purl: bool, sym: string, col: string|null }
-  const gridEl = document.getElementById('grid');
-  const rowsEl = document.getElementById('rows');
-  const colsEl = document.getElementById('cols');
-  const countEl = document.getElementById('count');
+  // --- Données de grille
+  let grid=[], mode='knit', painting=false, currentColor='#a05a7e', currentSymbol='';
+  const gridEl=document.getElementById('grid'), rowsEl=document.getElementById('rows'), colsEl=document.getElementById('cols'), countEl=document.getElementById('count');
 
-  let grid = []; // 2D array
-
-  function initGrid(r,c){
-    grid = Array.from({length:r}, ()=> Array.from({length:c}, ()=> ({purl:false, sym:"", col:null})));
-  }
-
+  function initGrid(r,c){ grid=Array.from({length:r},()=>Array.from({length:c},()=>({purl:false,sym:"",col:null}))); }
   function buildTable(){
-    gridEl.innerHTML = '';
+    gridEl.innerHTML='';
     for(let i=0;i<grid.length;i++){
-      const tr = document.createElement('tr');
+      const tr=document.createElement('tr');
       for(let j=0;j<grid[0].length;j++){
-        const td = document.createElement('td');
-        td.dataset.r = i; td.dataset.c = j;
-        if(grid[i][j].purl) td.classList.add('purl');
-        if(grid[i][j].sym){
-          const s = document.createElement('span'); s.className='sym'; s.textContent = grid[i][j].sym==="no"?"×":grid[i][j].sym;
-          td.appendChild(s);
-        }
-        if(grid[i][j].col){ td.style.background = grid[i][j].col; }
-        attachCellEvents(td);
-        tr.appendChild(td);
-      }
-      gridEl.appendChild(tr);
-    }
-    updateCount();
+        const td=document.createElement('td'); td.dataset.r=i; td.dataset.c=j;
+        drawCell(td, grid[i][j]); attachCellEvents(td); tr.appendChild(td);
+      } gridEl.appendChild(tr);
+    } updateCount();
   }
-
+  function drawCell(td,cell){
+    td.classList.toggle('purl', !!cell.purl);
+    td.style.background = cell.col || (cell.purl ? '#ececec' : '#fff');
+    td.innerHTML=''; if(cell.sym){ const s=document.createElement('span'); s.className='sym'; s.textContent=(cell.sym==="no"?"×":cell.sym); td.appendChild(s); }
+  }
   function updateCount(){
-    const total = grid.length*grid[0].length;
-    let purl=0, symbols=0, colored=0;
-    for(let r=0;r<grid.length;r++){
-      for(let c=0;c<grid[0].length;c++){
-        if(grid[r][c].purl) purl++;
-        if(grid[r][c].sym) symbols++;
-        if(grid[r][c].col) colored++;
-      }
-    }
-    countEl.textContent = `Total: ${total} • Envers: ${purl} • Symboles: ${symbols} • Couleurs: ${colored}`;
+    const total=grid.length*grid[0].length;
+    let p=0,s=0,c=0; for(const row of grid){ for(const cell of row){ if(cell.purl)p++; if(cell.sym)s++; if(cell.col)c++; } }
+    countEl.textContent=`Total: ${total} • Envers: ${p} • Symboles: ${s} • Couleurs: ${c}`;
   }
 
-  // --- Modes ---
-  const modeBtns = {
-    knit: document.getElementById('mode-knit'),
-    symbol: document.getElementById('mode-symbol'),
-    color: document.getElementById('mode-color'),
-  };
-  const symbolBar = document.getElementById('symbolBar');
-  const colorBar  = document.getElementById('colorBar');
-  const symbolSelect = document.getElementById('symbolSelect');
-
-  let mode = 'knit';
+  // --- Modes
+  const symbolBar=document.getElementById('symbolBar'), colorBar=document.getElementById('colorBar');
+  document.getElementById('mode-knit').onclick = ()=> setMode('knit');
+  document.getElementById('mode-symbol').onclick = ()=> setMode('symbol');
+  document.getElementById('mode-color').onclick = ()=> setMode('color');
   function setMode(m){
-    mode = m;
-    Object.values(modeBtns).forEach(b=>b.classList.remove('active'));
-    modeBtns[m].classList.add('active');
-    symbolBar.style.display = m==='symbol' ? '' : 'none';
-    colorBar.style.display  = m==='color' ? '' : 'none';
+    mode=m;
+    document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('active', b.id==='mode-'+m));
+    symbolBar.style.display = m==='symbol'?'':'none';
+    colorBar.style.display  = m==='color' ?'':'none';
   }
-  modeBtns.knit.onclick  = ()=> setMode('knit');
-  modeBtns.symbol.onclick= ()=> setMode('symbol');
-  modeBtns.color.onclick = ()=> setMode('color');
 
-  // Couleurs palette
-  let currentColor = '#a05a7e';
-  document.getElementById('palette').addEventListener('click', (e)=>{
-    const sw = e.target.closest('.sw');
-    if(sw){ currentColor = sw.dataset.col; }
+  // --- Palettes cliquables
+  // symboles
+  document.getElementById('symbolPalette').addEventListener('click', e=>{
+    const chip=e.target.closest('.chip'); if(!chip) return;
+    document.querySelectorAll('#symbolPalette .chip').forEach(x=>x.classList.remove('active'));
+    chip.classList.add('active'); currentSymbol = chip.dataset.sym || '';
   });
-  document.getElementById('picker').addEventListener('input', (e)=> currentColor = e.target.value);
+  // couleurs
+  const picker=document.getElementById('picker');
+  document.getElementById('colorPalette').addEventListener('click', e=>{
+    const sw=e.target.closest('.sw'); if(!sw) return;
+    document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active'));
+    sw.classList.add('active'); currentColor = sw.dataset.col;
+  });
+  picker.addEventListener('input', e=>{ currentColor=e.target.value; document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active')); });
 
-  // Peinture
-  let painting=false;
+  // --- Peinture cellules
   function applyCell(td){
-    const r = +td.dataset.r, c = +td.dataset.c;
-    const cell = grid[r][c];
-
-    if(mode==='knit'){
-      cell.purl = !cell.purl;
-    } else if(mode==='symbol'){
-      cell.sym = symbolSelect.value || "";
-    } else if(mode==='color'){
-      cell.col = currentColor;
-    }
-    // redraw cell
-    td.classList.toggle('purl', cell.purl);
-    td.style.background = cell.col || '';
-    td.innerHTML = '';
-    if(cell.sym){
-      const s = document.createElement('span'); s.className='sym'; s.textContent = cell.sym==="no"?"×":cell.sym;
-      td.appendChild(s);
-    }
-    updateCount();
+    const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
+    if(mode==='knit'){ cell.purl=!cell.purl; }
+    if(mode==='symbol'){ cell.sym=currentSymbol; }
+    if(mode==='color'){ cell.col=currentColor; }
+    drawCell(td, cell); updateCount();
   }
   function paintOver(td){
-    if(!painting) return;
-    if(mode==='knit'){
-      const r=+td.dataset.r, c=+td.dataset.c;
-      if(!grid[r][c].purl){ grid[r][c].purl = true; td.classList.add('purl'); updateCount(); }
-    } else if(mode==='color'){
-      const r=+td.dataset.r, c=+td.dataset.c;
-      grid[r][c].col = currentColor; td.style.background=currentColor; updateCount();
-    } else if(mode==='symbol'){
-      const r=+td.dataset.r, c=+td.dataset.c;
-      grid[r][c].sym = symbolSelect.value || ""; td.innerHTML=''; if(grid[r][c].sym){ const s=document.createElement('span'); s.className='sym'; s.textContent=(grid[r][c].sym==="no"?"×":grid[r][c].sym); td.appendChild(s); } updateCount();
-    }
+    if(!painting) return; const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
+    if(mode==='knit' && !cell.purl){ cell.purl=true; }
+    if(mode==='symbol'){ cell.sym=currentSymbol; }
+    if(mode==='color'){ cell.col=currentColor; }
+    drawCell(td, cell);
   }
   function attachCellEvents(td){
     td.addEventListener('mousedown', e=>{e.preventDefault(); painting=true; applyCell(td);});
@@ -256,106 +188,41 @@
   document.addEventListener('mouseup', ()=> painting=false);
   document.addEventListener('touchend', ()=> painting=false);
 
-  // Construire / Clear / Invert
-  document.getElementById('build').onclick = ()=>{
-    const r = Math.max(1, Math.min(240, parseInt(rowsEl.value||16)));
-    const c = Math.max(1, Math.min(240, parseInt(colsEl.value||16)));
-    initGrid(r,c); buildTable();
-  };
-  document.getElementById('clear').onclick = ()=>{
-    for(let r=0;r<grid.length;r++) for(let c=0;c<grid[0].length;c++) grid[r][c]={purl:false,sym:"",col:null};
-    buildTable();
-  };
-  document.getElementById('invert').onclick = ()=>{
-    for(let r=0;r<grid.length;r++) for(let c=0;c<grid[0].length;c++) grid[r][c].purl=!grid[r][c].purl;
-    buildTable();
+  // --- Actions grille
+  document.getElementById('build').onclick=()=>{ const r=Math.max(1,Math.min(240,parseInt(rowsEl.value||16))); const c=Math.max(1,Math.min(240,parseInt(colsEl.value||16))); initGrid(r,c); buildTable(); };
+  document.getElementById('clear').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j]={purl:false,sym:"",col:null}; buildTable(); };
+  document.getElementById('invert').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j].purl=!grid[i][j].purl; buildTable(); };
+
+  // --- Export grille
+  document.getElementById('exportGrid').onclick=()=>{
+    if(!grid.length) return; const S=30, rows=grid.length, cols=grid[0].length;
+    const can=document.createElement('canvas'); can.width=cols*S; can.height=rows*S; const ctx=can.getContext('2d');
+    for(let i=0;i<rows;i++){ for(let j=0;j<cols;j++){ const cell=grid[i][j];
+      ctx.fillStyle=cell.col || (cell.purl?'#ececec':'#fff'); ctx.fillRect(j*S,i*S,S,S);
+      ctx.strokeStyle='#bbb'; ctx.strokeRect(j*S+.5,i*S+.5,S-1,S-1);
+      if(cell.sym){ ctx.fillStyle='#111'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cell.sym==="no"?"×":cell.sym, j*S+S/2, i*S+S/2); }
+    }} const a=document.createElement('a'); a.download='grille.png'; a.href=can.toDataURL('image/png'); a.click();
   };
 
-  // Export grille PNG (avec symboles/couleurs)
-  document.getElementById('exportGrid').onclick = ()=>{
-    if(!grid.length) return;
-    const S=30; const rows=grid.length, cols=grid[0].length;
-    const can=document.createElement('canvas'); can.width=cols*S; can.height=rows*S;
-    const ctx=can.getContext('2d');
-    for(let i=0;i<rows;i++){
-      for(let j=0;j<cols;j++){
-        const cell=grid[i][j];
-        ctx.fillStyle = cell.col || (cell.purl ? '#e9e9e9' : '#ffffff');
-        ctx.fillRect(j*S, i*S, S, S);
-        ctx.strokeStyle='#bbbbbb'; ctx.strokeRect(j*S+0.5, i*S+0.5, S-1, S-1);
-        if(cell.sym){
-          ctx.fillStyle = '#222'; ctx.font = '12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-          ctx.fillText(cell.sym==="no"?"×":cell.sym, j*S+S/2, i*S+S/2);
-        }
-      }
-    }
-    const a=document.createElement('a'); a.download='grille.png'; a.href=can.toDataURL('image/png'); a.click();
-  };
-
-  // --- Rendu tricot sur canvas ---
-  const knitCanvas=document.getElementById('knitCanvas');
-  const rctx=knitCanvas.getContext('2d');
-
+  // --- Rendu simple (même que version précédente)
+  const knitCanvas=document.getElementById('knitCanvas'), rctx=knitCanvas.getContext('2d');
   function drawKnit(){
-    if(!grid.length) return;
-    const rows=grid.length, cols=grid[0].length;
-
-    // Taille auto pour que ça tienne
-    const cellW = Math.max(8, Math.floor(Math.min(knitCanvas.width/(cols), knitCanvas.height/(rows))));
-    knitCanvas.width = cols*cellW;
-    knitCanvas.height= rows*cellW;
-
-    rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
-
-    for(let i=0;i<rows;i++){
-      for(let j=0;j<cols;j++){
-        const x=j*cellW, y=i*cellW;
-        const cell=grid[i][j];
-        const bg = cell.col || '#dddddd';
-        // Fond léger (couleur)
-        rctx.fillStyle = bg;
-        rctx.fillRect(x, y, cellW, cellW);
-
-        // Relief : endroit = “V”, envers = petit pont
-        rctx.strokeStyle = '#333';
-        rctx.lineWidth = Math.max(1, cellW*0.07);
-        if(cell.purl){
-          // envers : petit U horizontal
-          rctx.beginPath();
-          rctx.moveTo(x+cellW*0.2, y+cellW*0.55);
-          rctx.bezierCurveTo(x+cellW*0.35, y+cellW*0.75, x+cellW*0.65, y+cellW*0.75, x+cellW*0.8, y+cellW*0.55);
-          rctx.stroke();
-        }else{
-          // endroit : V
-          rctx.beginPath();
-          rctx.moveTo(x+cellW*0.2, y+cellW*0.25);
-          rctx.lineTo(x+cellW*0.5, y+cellW*0.75);
-          rctx.lineTo(x+cellW*0.8, y+cellW*0.25);
-          rctx.stroke();
-        }
-
-        // Symboles (lace/déc.)
-        if(cell.sym){
-          rctx.fillStyle = '#111';
-          rctx.font = `${Math.floor(cellW*0.35)}px sans-serif`;
-          rctx.textAlign='center'; rctx.textBaseline='middle';
-          const label = (cell.sym==="no"?"×":cell.sym);
-          rctx.fillText(label, x+cellW/2, y+cellW/2);
-        }
-      }
-    }
+    if(!grid.length) return; const rows=grid.length, cols=grid[0].length;
+    const cellW=Math.max(8,Math.floor(Math.min(knitCanvas.width/cols, knitCanvas.height/rows)));
+    knitCanvas.width=cols*cellW; knitCanvas.height=rows*cellW; rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
+    for(let i=0;i<rows;i++){ for(let j=0;j<cols;j++){ const x=j*cellW,y=i*cellW,cell=grid[i][j],bg=cell.col||'#dddddd';
+      rctx.fillStyle=bg; rctx.fillRect(x,y,cellW,cellW);
+      rctx.strokeStyle='#333'; rctx.lineWidth=Math.max(1, cellW*0.07);
+      if(cell.purl){ rctx.beginPath(); rctx.moveTo(x+cellW*.2,y+cellW*.55); rctx.bezierCurveTo(x+cellW*.35,y+cellW*.75,x+cellW*.65,y+cellW*.75,x+cellW*.8,y+cellW*.55); rctx.stroke(); }
+      else { rctx.beginPath(); rctx.moveTo(x+cellW*.2,y+cellW*.25); rctx.lineTo(x+cellW*.5,y+cellW*.75); rctx.lineTo(x+cellW*.8,y+cellW*.25); rctx.stroke(); }
+      if(cell.sym){ rctx.fillStyle='#111'; rctx.font=`${Math.floor(cellW*.35)}px sans-serif`; rctx.textAlign='center'; rctx.textBaseline='middle'; rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellW/2); }
+    }}
   }
-
-  document.getElementById('renderBtn').onclick = drawKnit;
-  document.getElementById('exportRender').onclick = ()=>{
-    drawKnit();
-    const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click();
-  };
+  document.getElementById('renderBtn').onclick=drawKnit;
+  document.getElementById('exportRender').onclick=()=>{ drawKnit(); const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click(); };
 
   // Init
-  initGrid(parseInt(rowsEl.value), parseInt(colsEl.value));
-  buildTable();
-  drawKnit();
+  initGrid(parseInt(rowsEl.value), parseInt(colsEl.value)); buildTable(); drawKnit();
 </script>
 </body>
 </html>
