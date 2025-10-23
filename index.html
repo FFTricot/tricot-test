@@ -7,9 +7,12 @@
 <meta name="robots" content="noindex, nofollow" />
 <style>
   :root{--fond:#faf8f5;--encre:#2f2a28;--accent:#a05a7e;--bord:#d7ccc8;--case:#fff;--alt:#ececec}
-  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--encre);background:var(--fond)}
-  header{padding:20px 14px;text-align:center;border-bottom:1px solid var(--bord)} header h1{margin:0 0 6px;color:var(--accent)}
-  main{max-width:1100px;margin:20px auto;padding:0 14px} section{background:#fff;border:1px solid var(--bord);border-radius:12px;padding:16px;margin:16px 0}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--encre);background:var(--fond)}
+  header{padding:20px 14px;text-align:center;border-bottom:1px solid var(--bord)}
+  header h1{margin:0 0 6px;color:var(--accent)}
+  main{max-width:1100px;margin:20px auto;padding:0 14px}
+  section{background:#fff;border:1px solid var(--bord);border-radius:12px;padding:16px;margin:16px 0}
   h2{margin-top:0;color:var(--accent)}
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
   .btn{padding:8px 12px;border-radius:8px;border:1px solid var(--bord);background:#fff;cursor:pointer}
@@ -22,8 +25,6 @@
   td.purl{background:var(--alt)}
   td .sym{font-size:12px}
   .hint{font-size:12px;opacity:.75}
-
-  /* palettes cliquables */
   .palette{display:flex;gap:8px;flex-wrap:wrap}
   .chip{border:1px solid var(--bord);border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer;font-size:13px}
   .chip.active{background:var(--alt)}
@@ -36,10 +37,11 @@
 <body>
 <header>
   <h1>FFTricot – Grille interactive & rendu “Laine douce” 🧶</h1>
-  <p>Palettes DROPS (approximatives), boutons de points & couleurs, rendu plus réaliste.</p>
+  <p>Palettes DROPS (approximatives), boutons de points & couleurs, rendu textile réaliste.</p>
 </header>
 
 <main>
+  <!-- ====== GRILLE ====== -->
   <section>
     <h2>1) Grille</h2>
     <div class="controls">
@@ -61,7 +63,7 @@
       <span class="hint">Tape/clic pour peindre; glisse pour plusieurs cases.</span>
     </div>
 
-    <!-- Palette de symboles -->
+    <!-- Palette symboles (pills) -->
     <div class="controls" id="symbolBar" style="display:none">
       <div class="palette" id="symbolPalette" aria-label="Symboles">
         <span class="chip" data-sym="">(vide)</span>
@@ -75,19 +77,13 @@
       </div>
     </div>
 
-    <!-- Palettes DROPS -->
+    <!-- Palettes couleurs DROPS -->
     <div class="controls" id="colorBar" style="display:none">
       <label>Gamme DROPS
         <select id="lineSelect">
-          <option>Merino Extra Fine</option>
-          <option>Nepal</option>
-          <option>Air</option>
-          <option>Nord</option>
-          <option>Lima</option>
-          <option>Karisma</option>
-          <option>Alaska</option>
-          <option>Sky</option>
-          <option>Cotton Merino</option>
+          <option>Merino Extra Fine</option><option>Nepal</option><option>Air</option>
+          <option>Nord</option><option>Lima</option><option>Karisma</option>
+          <option>Alaska</option><option>Sky</option><option>Cotton Merino</option>
         </select>
       </label>
       <div class="palette" id="colorPalette" aria-label="Couleurs"></div>
@@ -104,16 +100,23 @@
     </div>
   </section>
 
+  <!-- ====== RENDU ====== -->
   <section>
     <h2>3) Rendu</h2>
     <div class="controls">
       <div class="seg">
-        <button id="style-flat"  class="active">Style plat</button>
-        <button id="style-wool">Laine douce</button>
+        <button id="style-flat">Style plat</button>
+        <button id="style-wool" class="active">Laine douce</button>
       </div>
-      <span class="hint">“Laine douce” ajoute relief, micro-fibres et petites variations de lumière.</span>
+      <label style="margin-left:8px;">
+        <input type="checkbox" id="guides">
+        Repères (V/P)
+      </label>
+      <span class="hint">Décochez les repères pour un rendu 100% textile.</span>
     </div>
+
     <canvas id="knitCanvas" width="640" height="640"></canvas>
+
     <div class="controls">
       <button class="btn" id="renderBtn">Actualiser le rendu</button>
       <button class="btn" id="exportRender">Exporter le rendu (PNG)</button>
@@ -122,285 +125,284 @@
 </main>
 
 <script>
-  /* ===================== PALETTES (approximations) ===================== */
-  const DROPS = {
-    "Merino Extra Fine": [
-      ["02 Noir","#2c2c2c"],["01 Blanc","#f5f5f5"],["17 Gris moyen","#9aa0a6"],
-      ["37 Gris clair","#c8ccd0"],["40 Rose poudre","#e7c0cc"],["30 Moutarde","#c7a21e"],
-      ["24 Rouge brique","#a33b34"],["48 Bleu pétrole","#2f6b73"],["34 Vert sapin","#2f5e40"]
-    ],
-    "Nepal": [
-      ["0506 Noir","#2b2b2b"],["8903 Perle","#dadada"],["7120 Gris clair","#c7c7c7"],
-      ["0612 Beige","#c7b49a"],["2920 Rouge","#b2322e"],["7238 Vert forêt","#2f4f3a"],
-      ["4305 Bleu jean","#3d5c84"],["4434 Violet","#6e4b84"]
-    ],
-    "Air": [
-      ["01 Naturel","#efeae3"],["02 Gris perle","#d8d6d2"],["03 Gris moyen","#a6a5a3"],
-      ["26 Rose poudré","#e9c8cf"],["07 Moutarde","#c7a121"],["09 Sauge","#8ea98b"],
-      ["11 Bleu orage","#56697a"]
-    ],
-    "Nord": [
-      ["01 Naturel","#eee9e2"],["03 Perle","#dad7d2"],["07 Noir","#2b2b2b"],
-      ["16 Rose poudré","#e7c0cb"],["05 Moutarde","#c5a01b"],["19 Marine","#1f2d4a"],
-      ["18 Vert bouteille","#2b533b"]
-    ],
-    "Lima": [
-      ["9010 Perle","#d7d7d7"],["4305 Jean","#3e5b86"],["0701 Gris clair","#c9c9c9"],
-      ["2923 Rouge rouille","#a3472f"],["7810 Vert sapin","#2b513a"],["1101 Blanc","#f6f6f6"]
-    ],
-    "Karisma": [
-      ["01 Blanc","#f7f7f7"],["16 Gris moyen","#a1a6ac"],["53 Noir","#2b2b2b"],
-      ["52 Bordeaux","#6f2731"],["37 Marine","#23304d"],["11 Moutarde","#c39b1d"]
-    ],
-    "Alaska": [
-      ["02 Noir","#2a2a2a"],["03 Gris perle","#d6d6d6"],["54 Vert mousse","#7d8f75"],
-      ["10 Rouge","#a12b2b"],["47 Bleu pétrole","#2b6a73"],["01 Naturel","#f1ede6"]
-    ],
-    "Sky": [
-      ["01 Naturel","#efeae2"],["04 Perle","#d7d5cf"],["05 Gris moyen","#a8a6a3"],
-      ["08 Pétrole","#2f6a72"],["10 Rose poudre","#e7c1cb"],["11 Sauge","#8ea98c"]
-    ],
-    "Cotton Merino": [
-      ["01 Naturel","#f1ece6"],["03 Gris clair","#d3d1cc"],["05 Noir","#2a2a2a"],
-      ["24 Rose poudre","#e7c0cc"],["18 Marine","#23314d"],["19 Camel","#b69162"]
-    ]
-  };
+/* ---------- Palettes DROPS (approximations jolies) ---------- */
+const DROPS={
+  "Merino Extra Fine":[["02 Noir","#2c2c2c"],["01 Blanc","#f5f5f5"],["17 Gris moyen","#9aa0a6"],["37 Gris clair","#c8ccd0"],["40 Rose poudre","#e7c0cc"],["30 Moutarde","#c7a21e"],["24 Rouge brique","#a33b34"],["48 Bleu pétrole","#2f6b73"],["34 Vert sapin","#2f5e40"]],
+  "Nepal":[["0506 Noir","#2b2b2b"],["8903 Perle","#dadada"],["7120 Gris clair","#c7c7c7"],["0612 Beige","#c7b49a"],["2920 Rouge","#b2322e"],["7238 Vert forêt","#2f4f3a"],["4305 Bleu jean","#3d5c84"],["4434 Violet","#6e4b84"]],
+  "Air":[["01 Naturel","#efeae3"],["02 Gris perle","#d8d6d2"],["03 Gris moyen","#a6a5a3"],["26 Rose poudré","#e9c8cf"],["07 Moutarde","#c7a121"],["09 Sauge","#8ea98b"],["11 Bleu orage","#56697a"]],
+  "Nord":[["01 Naturel","#eee9e2"],["03 Perle","#dad7d2"],["07 Noir","#2b2b2b"],["16 Rose poudré","#e7c0cb"],["05 Moutarde","#c5a01b"],["19 Marine","#1f2d4a"],["18 Vert bouteille","#2b533b"]],
+  "Lima":[["9010 Perle","#d7d7d7"],["4305 Jean","#3e5b86"],["0701 Gris clair","#c9c9c9"],["2923 Rouge rouille","#a3472f"],["7810 Vert sapin","#2b513a"],["1101 Blanc","#f6f6f6"]],
+  "Karisma":[["01 Blanc","#f7f7f7"],["16 Gris moyen","#a1a6ac"],["53 Noir","#2b2b2b"],["52 Bordeaux","#6f2731"],["37 Marine","#23304d"],["11 Moutarde","#c39b1d"]],
+  "Alaska":[["02 Noir","#2a2a2a"],["03 Gris perle","#d6d6d6"],["54 Vert mousse","#7d8f75"],["10 Rouge","#a12b2b"],["47 Bleu pétrole","#2b6a73"],["01 Naturel","#f1ede6"]],
+  "Sky":[["01 Naturel","#efeae2"],["04 Perle","#d7d5cf"],["05 Gris moyen","#a8a6a3"],["08 Pétrole","#2f6a72"],["10 Rose poudre","#e7c1cb"],["11 Sauge","#8ea98c"]],
+  "Cotton Merino":[["01 Naturel","#f1ece6"],["03 Gris clair","#d3d1cc"],["05 Noir","#2a2a2a"],["24 Rose poudre","#e7c0cc"],["18 Marine","#23314d"],["19 Camel","#b69162"]]
+};
 
-  /* ===================== GRILLE ===================== */
-  let grid=[], mode='knit', painting=false, currentColor='#a05a7e', currentSymbol='', renderStyle='flat';
-  const gridEl=document.getElementById('grid'), rowsEl=document.getElementById('rows'), colsEl=document.getElementById('cols'), countEl=document.getElementById('count');
+/* ---------- État & helpers ---------- */
+let grid=[], mode='knit', painting=false, currentColor='#a05a7e', currentSymbol='';
+let renderStyle='wool'; // défaut sur "Laine douce"
+let showGuides=false;   // défaut: 100% textile
 
-  function initGrid(r,c){ grid=Array.from({length:r},()=>Array.from({length:c},()=>({purl:false,sym:"",col:null}))); }
-  function buildTable(){
-    gridEl.innerHTML='';
-    for(let i=0;i<grid.length;i++){
-      const tr=document.createElement('tr');
-      for(let j=0;j<grid[0].length;j++){
-        const td=document.createElement('td'); td.dataset.r=i; td.dataset.c=j;
-        drawCell(td, grid[i][j]); attachCellEvents(td); tr.appendChild(td);
-      } gridEl.appendChild(tr);
-    } updateCount();
-  }
-  function drawCell(td,cell){
-    td.classList.toggle('purl', !!cell.purl);
-    td.style.background = cell.col || (cell.purl ? '#ececec' : '#fff');
-    td.innerHTML=''; if(cell.sym){ const s=document.createElement('span'); s.className='sym'; s.textContent=(cell.sym==="no"?"×":cell.sym); td.appendChild(s); }
-  }
-  function updateCount(){
-    const total=grid.length*grid[0].length;
-    let p=0,s=0,c=0; for(const row of grid){ for(const cell of row){ if(cell.purl)p++; if(cell.sym)s++; if(cell.col)c++; } }
-    countEl.textContent=`Total: ${total} • Envers: ${p} • Symboles: ${s} • Couleurs: ${c}`;
-  }
+const gridEl=document.getElementById('grid'),
+      rowsEl=document.getElementById('rows'),
+      colsEl=document.getElementById('cols'),
+      countEl=document.getElementById('count');
 
-  // Modes
-  const symbolBar=document.getElementById('symbolBar'), colorBar=document.getElementById('colorBar');
-  document.getElementById('mode-knit').onclick = ()=> setMode('knit');
-  document.getElementById('mode-symbol').onclick = ()=> setMode('symbol');
-  document.getElementById('mode-color').onclick = ()=> setMode('color');
-  function setMode(m){
-    mode=m;
-    document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('active', b.id==='mode-'+m));
-    symbolBar.style.display = m==='symbol'?'':'none';
-    colorBar.style.display  = m==='color' ?'':'none';
+function initGrid(r,c){ grid=Array.from({length:r},()=>Array.from({length:c},()=>({purl:false,sym:"",col:null}))); }
+function buildTable(){
+  gridEl.innerHTML='';
+  for(let i=0;i<grid.length;i++){
+    const tr=document.createElement('tr');
+    for(let j=0;j<grid[0].length;j++){
+      const td=document.createElement('td'); td.dataset.r=i; td.dataset.c=j;
+      drawCell(td, grid[i][j]); attachCellEvents(td); tr.appendChild(td);
+    }
+    gridEl.appendChild(tr);
   }
+  updateCount();
+}
+function drawCell(td,cell){
+  td.classList.toggle('purl', !!cell.purl);
+  td.style.background = cell.col || (cell.purl ? '#ececec' : '#fff');
+  td.innerHTML=''; if(cell.sym){ const s=document.createElement('span'); s.className='sym'; s.textContent=(cell.sym==="no"?"×":cell.sym); td.appendChild(s); }
+}
+function updateCount(){
+  const total=grid.length*grid[0].length;
+  let p=0,s=0,c=0; for(const row of grid){ for(const cell of row){ if(cell.purl)p++; if(cell.sym)s++; if(cell.col)c++; } }
+  countEl.textContent=`Total: ${total} • Envers: ${p} • Symboles: ${s} • Couleurs: ${c}`;
+}
 
-  // Symboles (pills)
-  document.getElementById('symbolPalette').addEventListener('click', e=>{
-    const chip=e.target.closest('.chip'); if(!chip) return;
-    document.querySelectorAll('#symbolPalette .chip').forEach(x=>x.classList.remove('active'));
-    chip.classList.add('active'); currentSymbol = chip.dataset.sym || '';
+/* ---------- Modes ---------- */
+const symbolBar=document.getElementById('symbolBar'), colorBar=document.getElementById('colorBar');
+document.getElementById('mode-knit').onclick = ()=> setMode('knit');
+document.getElementById('mode-symbol').onclick = ()=> setMode('symbol');
+document.getElementById('mode-color').onclick = ()=> setMode('color');
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('active', b.id==='mode-'+m));
+  symbolBar.style.display = m==='symbol'?'':'none';
+  colorBar.style.display  = m==='color' ?'':'none';
+}
+
+/* ---------- Palettes symboles & couleurs ---------- */
+document.getElementById('symbolPalette').addEventListener('click', e=>{
+  const chip=e.target.closest('.chip'); if(!chip) return;
+  document.querySelectorAll('#symbolPalette .chip').forEach(x=>x.classList.remove('active'));
+  chip.classList.add('active'); currentSymbol = chip.dataset.sym || '';
+});
+
+const lineSelect=document.getElementById('lineSelect');
+const colorPalette=document.getElementById('colorPalette');
+const picker=document.getElementById('picker');
+
+function loadPalette(line){
+  colorPalette.innerHTML='';
+  (DROPS[line]||[]).forEach(([name,hex],i)=>{
+    const sw=document.createElement('div'); sw.className='sw'; sw.title=name; sw.style.background=hex; sw.dataset.col=hex;
+    if(i===0){ sw.classList.add('active'); currentColor=hex; }
+    colorPalette.appendChild(sw);
   });
+}
+loadPalette(lineSelect.value);
+lineSelect.addEventListener('change', ()=> loadPalette(lineSelect.value));
+colorPalette.addEventListener('click', e=>{
+  const sw=e.target.closest('.sw'); if(!sw) return;
+  document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active'));
+  sw.classList.add('active'); currentColor = sw.dataset.col;
+});
+picker.addEventListener('input', e=>{ currentColor=e.target.value; document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active')); });
 
-  // Couleurs DROPS
-  const lineSelect=document.getElementById('lineSelect');
-  const colorPalette=document.getElementById('colorPalette');
-  const picker=document.getElementById('picker');
+/* ---------- Peinture cellules ---------- */
+function applyCell(td){
+  const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
+  if(mode==='knit'){ cell.purl=!cell.purl; }
+  if(mode==='symbol'){ cell.sym=currentSymbol; }
+  if(mode==='color'){ cell.col=currentColor; }
+  drawCell(td, cell); updateCount();
+}
+function paintOver(td){
+  if(!painting) return; const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
+  if(mode==='knit' && !cell.purl){ cell.purl=true; }
+  if(mode==='symbol'){ cell.sym=currentSymbol; }
+  if(mode==='color'){ cell.col=currentColor; }
+  drawCell(td, cell);
+}
+function attachCellEvents(td){
+  td.addEventListener('mousedown', e=>{e.preventDefault(); painting=true; applyCell(td);});
+  td.addEventListener('mousemove', ()=> paintOver(td));
+  td.addEventListener('touchstart', e=>{e.preventDefault(); painting=true; applyCell(td);},{passive:false});
+  td.addEventListener('touchmove', e=>{e.preventDefault(); const t=e.touches[0]; const el=document.elementFromPoint(t.clientX,t.clientY); if(el && el.tagName==='TD') paintOver(el);},{passive:false});
+  td.addEventListener('click', ()=> applyCell(td));
+}
+document.addEventListener('mouseup', ()=> painting=false);
+document.addEventListener('touchend', ()=> painting=false);
 
-  function loadPalette(line){
-    colorPalette.innerHTML='';
-    (DROPS[line]||[]).forEach(([name,hex],i)=>{
-      const sw=document.createElement('div'); sw.className='sw'; sw.title=name; sw.style.background=hex; sw.dataset.col=hex;
-      if(i===0){ sw.classList.add('active'); currentColor=hex; }
-      colorPalette.appendChild(sw);
-    });
-  }
-  loadPalette(lineSelect.value);
-  lineSelect.addEventListener('change', ()=> loadPalette(lineSelect.value));
-  colorPalette.addEventListener('click', e=>{
-    const sw=e.target.closest('.sw'); if(!sw) return;
-    document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active'));
-    sw.classList.add('active'); currentColor = sw.dataset.col;
-  });
-  picker.addEventListener('input', e=>{ currentColor=e.target.value; document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active')); });
+/* ---------- Actions grille ---------- */
+document.getElementById('build').onclick=()=>{ const r=Math.max(1,Math.min(240,parseInt(rowsEl.value||16))); const c=Math.max(1,Math.min(240,parseInt(colsEl.value||16))); initGrid(r,c); buildTable(); };
+document.getElementById('clear').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j]={purl:false,sym:"",col:null}; buildTable(); };
+document.getElementById('invert').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j].purl=!grid[i][j].purl; buildTable(); };
 
-  // Peinture
-  function applyCell(td){
-    const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
-    if(mode==='knit'){ cell.purl=!cell.purl; }
-    if(mode==='symbol'){ cell.sym=currentSymbol; }
-    if(mode==='color'){ cell.col=currentColor; }
-    drawCell(td, cell); updateCount();
-  }
-  function paintOver(td){
-    if(!painting) return; const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
-    if(mode==='knit' && !cell.purl){ cell.purl=true; }
-    if(mode==='symbol'){ cell.sym=currentSymbol; }
-    if(mode==='color'){ cell.col=currentColor; }
-    drawCell(td, cell);
-  }
-  function attachCellEvents(td){
-    td.addEventListener('mousedown', e=>{e.preventDefault(); painting=true; applyCell(td);});
-    td.addEventListener('mousemove', ()=> paintOver(td));
-    td.addEventListener('touchstart', e=>{e.preventDefault(); painting=true; applyCell(td);},{passive:false});
-    td.addEventListener('touchmove', e=>{e.preventDefault(); const t=e.touches[0]; const el=document.elementFromPoint(t.clientX,t.clientY); if(el && el.tagName==='TD') paintOver(el);},{passive:false});
-    td.addEventListener('click', ()=> applyCell(td));
-  }
-  document.addEventListener('mouseup', ()=> painting=false);
-  document.addEventListener('touchend', ()=> painting=false);
+/* ---------- Export grille ---------- */
+document.getElementById('exportGrid').onclick=()=>{
+  if(!grid.length) return; const S=30, rows=grid.length, cols=grid[0].length;
+  const can=document.createElement('canvas'); can.width=cols*S; can.height=rows*S; const ctx=can.getContext('2d');
+  for(let i=0;i<rows;i++){ for(let j=0;j<cols;j++){ const cell=grid[i][j];
+    ctx.fillStyle=cell.col || (cell.purl?'#ececec':'#fff'); ctx.fillRect(j*S,i*S,S,S);
+    ctx.strokeStyle='#bbb'; ctx.strokeRect(j*S+.5,i*S+.5,S-1,S-1);
+    if(cell.sym){ ctx.fillStyle='#111'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cell.sym==="no"?"×":cell.sym, j*S+S/2, i*S+S/2); }
+  }} const a=document.createElement('a'); a.download='grille.png'; a.href=can.toDataURL('image/png'); a.click();
+};
 
-  // Actions
-  document.getElementById('build').onclick=()=>{ const r=Math.max(1,Math.min(240,parseInt(rowsEl.value||16))); const c=Math.max(1,Math.min(240,parseInt(colsEl.value||16))); initGrid(r,c); buildTable(); };
-  document.getElementById('clear').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j]={purl:false,sym:"",col:null}; buildTable(); };
-  document.getElementById('invert').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j].purl=!grid[i][j].purl; buildTable(); };
+/* ---------- Rendu ---------- */
+const knitCanvas=document.getElementById('knitCanvas'), rctx=knitCanvas.getContext('2d');
 
-  // Export grille
-  document.getElementById('exportGrid').onclick=()=>{
-    if(!grid.length) return; const S=30, rows=grid.length, cols=grid[0].length;
-    const can=document.createElement('canvas'); can.width=cols*S; can.height=rows*S; const ctx=can.getContext('2d');
-    for(let i=0;i<rows;i++){ for(let j=0;j<cols;j++){ const cell=grid[i][j];
-      ctx.fillStyle=cell.col || (cell.purl?'#ececec':'#fff'); ctx.fillRect(j*S,i*S,S,S);
-      ctx.strokeStyle='#bbb'; ctx.strokeRect(j*S+.5,i*S+.5,S-1,S-1);
-      if(cell.sym){ ctx.fillStyle='#111'; ctx.font='12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(cell.sym==="no"?"×":cell.sym, j*S+S/2, i*S+S/2); }
-    }} const a=document.createElement('a'); a.download='grille.png'; a.href=can.toDataURL('image/png'); a.click();
-  };
+document.getElementById('style-flat').onclick = ()=>{ renderStyle='flat'; toggleStyle(); drawKnit(); };
+document.getElementById('style-wool').onclick = ()=>{ renderStyle='wool'; toggleStyle(); drawKnit(); };
+function toggleStyle(){
+  document.getElementById('style-flat').classList.toggle('active', renderStyle==='flat');
+  document.getElementById('style-wool').classList.toggle('active', renderStyle==='wool');
+}
 
-  /* ===================== RENDU ===================== */
-  const knitCanvas=document.getElementById('knitCanvas'), rctx=knitCanvas.getContext('2d');
-  document.getElementById('style-flat').onclick = ()=>{ renderStyle='flat'; toggleStyle(); drawKnit();};
-  document.getElementById('style-wool').onclick = ()=>{ renderStyle='wool'; toggleStyle(); drawKnit();};
-  function toggleStyle(){
-    document.getElementById('style-flat').classList.toggle('active', renderStyle==='flat');
-    document.getElementById('style-wool').classList.toggle('active', renderStyle==='wool');
-  }
+document.getElementById('guides').addEventListener('change', (e)=>{
+  showGuides = e.target.checked;
+  drawKnit();
+});
 
-  // petit générateur de “bruit” doux (fibres)
-  function noise(ctx, x,y,w,h, alpha=0.08){
-    const img=ctx.getImageData(x,y,w,h); const d=img.data;
-    for(let i=0;i<d.length;i+=4){
-      const n=(Math.random()-0.5)*255*alpha;
+document.getElementById('renderBtn').onclick=drawKnit;
+document.getElementById('exportRender').onclick=()=>{ drawKnit(); const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click(); };
+
+/* --- helpers communs --- */
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const shade=(hex,amt)=>{
+  const c=hex.startsWith('#')?hex.slice(1):hex, n=parseInt(c,16);
+  let R=(n>>16)&255, G=(n>>8)&255, B=n&255;
+  R=clamp(R+amt,0,255); G=clamp(G+amt,0,255); B=clamp(B+amt,0,255);
+  return `rgb(${R},${G},${B})`;
+};
+function yarnNoise(ctx,x,y,w,h,alpha=0.06){
+  const img=ctx.getImageData(x,y,w,h), d=img.data;
+  for(let yy=0; yy<h; yy++){
+    const rowBias=(Math.sin((y+yy)*0.12)+1)*0.5; // léger motif de bande
+    for(let xx=0; xx<w; xx++){
+      const i=(yy*w+xx)*4, n=(Math.random()-0.5)*255*(alpha*0.55 + rowBias*alpha*0.45);
       d[i]+=n; d[i+1]+=n; d[i+2]+=n;
     }
-    ctx.putImageData(img,x,y);
   }
-  // assombrir/éclaircir une couleur hex
-  function shade(hex, amt){
-    const c=hex.startsWith('#')?hex.slice(1):hex; const n=parseInt(c,16);
-    let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
-    r=Math.max(0,Math.min(255,r+amt)); g=Math.max(0,Math.min(255,g+amt)); b=Math.max(0,Math.min(255,b+amt));
-    return `rgb(${r},${g},${b})`;
-  }
+  ctx.putImageData(img,x,y);
+}
 
-  function drawKnit(){
+/* --- Rendu principal : “Laine douce” avec option Repères --- */
+function drawKnit(){
   if(!grid.length) return;
   const rows = grid.length, cols = grid[0].length;
 
-  // aspect ratio réaliste (maille plus large que haute)
-  const cellH = Math.max(8, Math.floor(knitCanvas.height / rows));
-  const cellW = Math.max(10, Math.floor((knitCanvas.width) / cols));
-  knitCanvas.width  = cols * cellW;
-  knitCanvas.height = rows * cellH;
-  rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
+  // proportions réalistes : maille plus large que haute
+  const h = Math.max(10, Math.floor(knitCanvas.height / rows));
+  const w = Math.max(14, Math.floor(knitCanvas.width  / cols));
+  knitCanvas.width  = cols * w;
+  knitCanvas.height = rows * h;
+  const ctx = rctx;
+  ctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
 
-  // petite fonction utilitaire
-  const shade=(hex,amt)=>{
-    const c=hex.startsWith('#')?hex.slice(1):hex, n=parseInt(c,16);
-    let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
-    r=Math.max(0,Math.min(255,r+amt));
-    g=Math.max(0,Math.min(255,g+amt));
-    b=Math.max(0,Math.min(255,b+amt));
-    return `rgb(${r},${g},${b})`;
-  };
+  for (let r=0; r<rows; r++){
+    const off = (r % 2) ? w * 0.5 : 0; // décalage 1/2 maille
 
-  for(let i=0;i<rows;i++){
-    // décalage d’une demi-maille un rang sur deux
-    const offset = (i%2) ? cellW*0.5 : 0;
-
-    for(let j=0;j<cols;j++){
-      const x = j*cellW + offset;
-      const y = i*cellH;
-      const cell = grid[i][j];
+    for (let c=0; c<cols; c++){
+      const cell = grid[r][c];
       const base = cell.col || '#d8d8d8';
+      const x = c*w + off;
+      const y = r*h;
 
-      // fond avec dégradé vertical doux
-      const grad=rctx.createLinearGradient(x,y,x,y+cellH);
-      grad.addColorStop(0, shade(base,+18));
+      // fond : dégradé vertical + ombre en bas
+      const grad = ctx.createLinearGradient(x, y, x, y+h);
+      grad.addColorStop(0.00, shade(base, +22));
       grad.addColorStop(0.55, base);
-      grad.addColorStop(1, shade(base,-18));
-      rctx.fillStyle=grad;
-      // on remplit un peu plus large pour couvrir l’offset
-      rctx.fillRect(x - (offset && j===0 ? cellW*0.5:0), y, cellW+1, cellH);
+      grad.addColorStop(1.00, shade(base, -22));
+      ctx.fillStyle = grad;
+      ctx.fillRect(x - (off && c===0 ? w*0.5 : 0), y, w+1, h);
 
-      // relief de maille
-      rctx.lineCap='round';
-      if(cell.purl){
-        // envers = petit pont
-        rctx.lineWidth = Math.max(1, cellH*0.10);
-        rctx.strokeStyle = shade(base, -70);
-        rctx.beginPath();
-        rctx.moveTo(x + cellW*0.18, y + cellH*0.55);
-        rctx.bezierCurveTo(x + cellW*0.35, y + cellH*0.78, x + cellW*0.65, y + cellH*0.78, x + cellW*0.82, y + cellH*0.55);
-        rctx.stroke();
-        // highlight
-        rctx.lineWidth = Math.max(1, cellH*0.04);
-        rctx.strokeStyle = shade(base, +70);
-        rctx.beginPath();
-        rctx.moveTo(x + cellW*0.22, y + cellH*0.50);
-        rctx.bezierCurveTo(x + cellW*0.38, y + cellH*0.68, x + cellW*0.62, y + cellH*0.68, x + cellW*0.78, y + cellH*0.50);
-        rctx.stroke();
-      } else {
-        // endroit = V en deux brins
-        rctx.lineWidth = Math.max(1, cellH*0.11);
-        rctx.strokeStyle = shade(base, -75);
-        rctx.beginPath();
-        rctx.moveTo(x + cellW*0.22, y + cellH*0.20);
-        rctx.lineTo(x + cellW*0.50, y + cellH*0.84);
-        rctx.lineTo(x + cellW*0.78, y + cellH*0.20);
-        rctx.stroke();
-        // arêtes claires
-        rctx.lineWidth = Math.max(1, cellH*0.04);
-        rctx.strokeStyle = shade(base, +70);
-        rctx.beginPath();
-        rctx.moveTo(x + cellW*0.26, y + cellH*0.20);
-        rctx.lineTo(x + cellW*0.50, y + cellH*0.77);
-        rctx.lineTo(x + cellW*0.74, y + cellH*0.20);
-        rctx.stroke();
+      // ombre douce entre colonnes (creux)
+      if(renderStyle==='wool'){
+        ctx.fillStyle = 'rgba(0,0,0,0.055)';
+        ctx.fillRect(x-0.6, y, 1.2, h);
       }
 
-      // léger “grain de fibre”
-      const img=rctx.getImageData(x, y, cellW, cellH);
-      const d=img.data;
-      for(let k=0;k<d.length;k+=4){
-        const n=(Math.random()-0.5)*14; // ± grain
-        d[k]+=n; d[k+1]+=n; d[k+2]+=n;
-      }
-      rctx.putImageData(img, x, y);
+      // emboss commun (volume textile sans V/U)
+      ctx.strokeStyle = shade(base, -35);
+      ctx.lineWidth = Math.max(1, h*0.06);
+      ctx.beginPath();
+      ctx.moveTo(x + w*0.15, y + h*0.35);
+      ctx.lineTo(x + w*0.85, y + h*0.35);
+      ctx.stroke();
 
-      // symbole (si tu utilises YO, SSK, etc.)
+      ctx.strokeStyle = shade(base, +55);
+      ctx.lineWidth = Math.max(1, h*0.03);
+      ctx.beginPath();
+      ctx.moveTo(x + w*0.15, y + h*0.65);
+      ctx.lineTo(x + w*0.85, y + h*0.65);
+      ctx.stroke();
+
+      // repères optionnels (V/P)
+      if (showGuides){
+        ctx.lineCap = 'round';
+        if (!cell.purl){
+          ctx.lineWidth = Math.max(1, h*0.11);
+          ctx.strokeStyle = shade(base, -80);
+          ctx.beginPath();
+          ctx.moveTo(x + w*0.24, y + h*0.18);
+          ctx.lineTo(x + w*0.50, y + h*0.86);
+          ctx.lineTo(x + w*0.76, y + h*0.18);
+          ctx.stroke();
+
+          ctx.lineWidth = Math.max(1, h*0.035);
+          ctx.strokeStyle = shade(base, +75);
+          ctx.beginPath();
+          ctx.moveTo(x + w*0.28, y + h*0.20);
+          ctx.lineTo(x + w*0.50, y + h*0.78);
+          ctx.lineTo(x + w*0.72, y + h*0.20);
+          ctx.stroke();
+        } else {
+          ctx.lineWidth = Math.max(1, h*0.10);
+          ctx.strokeStyle = shade(base, -70);
+          ctx.beginPath();
+          ctx.moveTo(x + w*0.20, y + h*0.56);
+          ctx.bezierCurveTo(x + w*0.36, y + h*0.80, x + w*0.64, y + h*0.80, x + w*0.80, y + h*0.56);
+          ctx.stroke();
+
+          ctx.lineWidth = Math.max(1, h*0.035);
+          ctx.strokeStyle = shade(base, +65);
+          ctx.beginPath();
+          ctx.moveTo(x + w*0.24, y + h*0.50);
+          ctx.bezierCurveTo(x + w*0.40, y + h*0.68, x + w*0.60, y + h*0.68, x + w*0.76, y + h*0.50);
+          ctx.stroke();
+        }
+      }
+
+      // “fibres” (bruit doux) + plus de relief si "Laine douce"
+      if(renderStyle==='wool'){ yarnNoise(ctx, x|0, y|0, (w+1)|0, (h+1)|0, 0.08); }
+
+      // symbole (si utilisé)
       if(cell.sym){
-        rctx.fillStyle='#1a1a1a';
-        rctx.font = `${Math.floor(cellH*0.38)}px sans-serif`;
-        rctx.textAlign='center'; rctx.textBaseline='middle';
-        rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellH/2);
+        ctx.fillStyle='rgba(15,15,15,0.9)';
+        ctx.font = `${Math.floor(h*0.36)}px sans-serif`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(cell.sym==="no"?"×":cell.sym, x+w/2, y+h/2);
       }
+    }
+
+    // séparation horizontale très subtile (rang)
+    if(renderStyle==='wool'){
+      ctx.fillStyle='rgba(0,0,0,0.05)';
+      ctx.fillRect(0, (r+1)*h - 1, knitCanvas.width, 1);
     }
   }
 }
 
-  document.getElementById('renderBtn').onclick=drawKnit;
-  document.getElementById('exportRender').onclick=()=>{ drawKnit(); const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click(); };
-
-  // Init
-  initGrid(parseInt(rowsEl.value), parseInt(colsEl.value)); buildTable(); drawKnit();
+/* ---------- Init ---------- */
+initGrid(parseInt(rowsEl.value), parseInt(colsEl.value));
+buildTable();
+toggleStyle(); // active "Laine douce"
+drawKnit();
 </script>
 </body>
 </html>
