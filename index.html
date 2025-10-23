@@ -301,87 +301,100 @@
   }
 
   function drawKnit(){
-    if(!grid.length) return; const rows=grid.length, cols=grid[0].length;
-    const cellW=Math.max(10,Math.floor(Math.min(knitCanvas.width/cols, knitCanvas.height/rows)));
-    knitCanvas.width=cols*cellW; knitCanvas.height=rows*cellW; rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
+  if(!grid.length) return;
+  const rows = grid.length, cols = grid[0].length;
 
-    for(let i=0;i<rows;i++){
-      for(let j=0;j<cols;j++){
-        const x=j*cellW, y=i*cellW; const cell=grid[i][j];
-        const base = cell.col || '#d8d8d8';
+  // aspect ratio réaliste (maille plus large que haute)
+  const cellH = Math.max(8, Math.floor(knitCanvas.height / rows));
+  const cellW = Math.max(10, Math.floor((knitCanvas.width) / cols));
+  knitCanvas.width  = cols * cellW;
+  knitCanvas.height = rows * cellH;
+  rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
 
-        if(renderStyle==='flat'){
-          rctx.fillStyle = base; rctx.fillRect(x,y,cellW,cellW);
-          rctx.strokeStyle='#333'; rctx.lineWidth=Math.max(1, cellW*0.07);
-          if(cell.purl){
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.2,y+cellW*.55);
-            rctx.bezierCurveTo(x+cellW*.35,y+cellW*.75,x+cellW*.65,y+cellW*.75,x+cellW*.8,y+cellW*.55);
-            rctx.stroke();
-          } else {
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.2,y+cellW*.25);
-            rctx.lineTo(x+cellW*.5,y+cellW*.78);
-            rctx.lineTo(x+cellW*.8,y+cellW*.25);
-            rctx.stroke();
-          }
-        } else {
-          // --- “Laine douce” : dégradé + relief + fibres ---
-          // dégradé subtile (haut clair -> bas plus sombre)
-          const grad=rctx.createLinearGradient(x,y,x,y+cellW);
-          grad.addColorStop(0, shade(base, +18));
-          grad.addColorStop(0.5, base);
-          grad.addColorStop(1, shade(base, -18));
-          rctx.fillStyle=grad; rctx.fillRect(x,y,cellW,cellW);
+  // petite fonction utilitaire
+  const shade=(hex,amt)=>{
+    const c=hex.startsWith('#')?hex.slice(1):hex, n=parseInt(c,16);
+    let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+    r=Math.max(0,Math.min(255,r+amt));
+    g=Math.max(0,Math.min(255,g+amt));
+    b=Math.max(0,Math.min(255,b+amt));
+    return `rgb(${r},${g},${b})`;
+  };
 
-          // relief : endroit = deux boudins en V ; envers = pont doux
-          rctx.lineWidth=Math.max(1, cellW*0.08);
-          rctx.lineCap='round';
-          if(cell.purl){
-            rctx.strokeStyle=shade(base,-60);
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.2, y+cellW*.55);
-            rctx.bezierCurveTo(x+cellW*.35,y+cellW*.78, x+cellW*.65,y+cellW*.78, x+cellW*.8,y+cellW*.55);
-            rctx.stroke();
-            // petit highlight au-dessus
-            rctx.strokeStyle=shade(base,+60);
-            rctx.lineWidth=Math.max(1, cellW*0.03);
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.25, y+cellW*.48);
-            rctx.bezierCurveTo(x+cellW*.4,y+cellW*.65, x+cellW*.6,y+cellW*.65, x+cellW*.75,y+cellW*.48);
-            rctx.stroke();
-          }else{
-            // deux brins du V
-            rctx.strokeStyle=shade(base,-70);
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.25,y+cellW*.22);
-            rctx.lineTo(x+cellW*.5 ,y+cellW*.78);
-            rctx.lineTo(x+cellW*.75,y+cellW*.22);
-            rctx.stroke();
-            // liseré clair
-            rctx.strokeStyle=shade(base,+70);
-            rctx.lineWidth=Math.max(1, cellW*0.03);
-            rctx.beginPath();
-            rctx.moveTo(x+cellW*.28,y+cellW*.22);
-            rctx.lineTo(x+cellW*.5 ,y+cellW*.72);
-            rctx.lineTo(x+cellW*.72,y+cellW*.22);
-            rctx.stroke();
-          }
+  for(let i=0;i<rows;i++){
+    // décalage d’une demi-maille un rang sur deux
+    const offset = (i%2) ? cellW*0.5 : 0;
 
-          // micro-fibres (bruit doux)
-          noise(rctx, x,y,cellW,cellW, 0.06);
-        }
+    for(let j=0;j<cols;j++){
+      const x = j*cellW + offset;
+      const y = i*cellH;
+      const cell = grid[i][j];
+      const base = cell.col || '#d8d8d8';
 
-        // symboles (lace/déc.)
-        if(cell.sym){
-          rctx.fillStyle='#111';
-          rctx.font = `${Math.floor(cellW*0.35)}px sans-serif`;
-          rctx.textAlign='center'; rctx.textBaseline='middle';
-          rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellW/2);
-        }
+      // fond avec dégradé vertical doux
+      const grad=rctx.createLinearGradient(x,y,x,y+cellH);
+      grad.addColorStop(0, shade(base,+18));
+      grad.addColorStop(0.55, base);
+      grad.addColorStop(1, shade(base,-18));
+      rctx.fillStyle=grad;
+      // on remplit un peu plus large pour couvrir l’offset
+      rctx.fillRect(x - (offset && j===0 ? cellW*0.5:0), y, cellW+1, cellH);
+
+      // relief de maille
+      rctx.lineCap='round';
+      if(cell.purl){
+        // envers = petit pont
+        rctx.lineWidth = Math.max(1, cellH*0.10);
+        rctx.strokeStyle = shade(base, -70);
+        rctx.beginPath();
+        rctx.moveTo(x + cellW*0.18, y + cellH*0.55);
+        rctx.bezierCurveTo(x + cellW*0.35, y + cellH*0.78, x + cellW*0.65, y + cellH*0.78, x + cellW*0.82, y + cellH*0.55);
+        rctx.stroke();
+        // highlight
+        rctx.lineWidth = Math.max(1, cellH*0.04);
+        rctx.strokeStyle = shade(base, +70);
+        rctx.beginPath();
+        rctx.moveTo(x + cellW*0.22, y + cellH*0.50);
+        rctx.bezierCurveTo(x + cellW*0.38, y + cellH*0.68, x + cellW*0.62, y + cellH*0.68, x + cellW*0.78, y + cellH*0.50);
+        rctx.stroke();
+      } else {
+        // endroit = V en deux brins
+        rctx.lineWidth = Math.max(1, cellH*0.11);
+        rctx.strokeStyle = shade(base, -75);
+        rctx.beginPath();
+        rctx.moveTo(x + cellW*0.22, y + cellH*0.20);
+        rctx.lineTo(x + cellW*0.50, y + cellH*0.84);
+        rctx.lineTo(x + cellW*0.78, y + cellH*0.20);
+        rctx.stroke();
+        // arêtes claires
+        rctx.lineWidth = Math.max(1, cellH*0.04);
+        rctx.strokeStyle = shade(base, +70);
+        rctx.beginPath();
+        rctx.moveTo(x + cellW*0.26, y + cellH*0.20);
+        rctx.lineTo(x + cellW*0.50, y + cellH*0.77);
+        rctx.lineTo(x + cellW*0.74, y + cellH*0.20);
+        rctx.stroke();
+      }
+
+      // léger “grain de fibre”
+      const img=rctx.getImageData(x, y, cellW, cellH);
+      const d=img.data;
+      for(let k=0;k<d.length;k+=4){
+        const n=(Math.random()-0.5)*14; // ± grain
+        d[k]+=n; d[k+1]+=n; d[k+2]+=n;
+      }
+      rctx.putImageData(img, x, y);
+
+      // symbole (si tu utilises YO, SSK, etc.)
+      if(cell.sym){
+        rctx.fillStyle='#1a1a1a';
+        rctx.font = `${Math.floor(cellH*0.38)}px sans-serif`;
+        rctx.textAlign='center'; rctx.textBaseline='middle';
+        rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellH/2);
       }
     }
   }
+}
 
   document.getElementById('renderBtn').onclick=drawKnit;
   document.getElementById('exportRender').onclick=()=>{ drawKnit(); const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click(); };
