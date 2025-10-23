@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>FFTricot – Grille & rendu</title>
+<title>FFTricot – Grille & rendu laine</title>
 <meta name="robots" content="noindex, nofollow" />
 <style>
   :root{--fond:#faf8f5;--encre:#2f2a28;--accent:#a05a7e;--bord:#d7ccc8;--case:#fff;--alt:#ececec}
@@ -30,12 +30,13 @@
   .sw{width:24px;height:24px;border-radius:6px;border:1px solid #aaa;cursor:pointer}
   .sw.active{outline:2px solid var(--accent)}
   canvas{border:1px solid var(--bord);border-radius:10px;background:#fff;max-width:100%}
+  select{padding:6px 8px;border-radius:8px;border:1px solid var(--bord);background:#fff}
 </style>
 </head>
 <body>
 <header>
-  <h1>FFTricot – Grille interactive & rendu</h1>
-  <p>Choix de points par boutons, palette de couleurs cliquable, rendu dessous.</p>
+  <h1>FFTricot – Grille interactive & rendu “Laine douce” 🧶</h1>
+  <p>Palettes DROPS (approximatives), boutons de points & couleurs, rendu plus réaliste.</p>
 </header>
 
 <main>
@@ -60,7 +61,7 @@
       <span class="hint">Tape/clic pour peindre; glisse pour plusieurs cases.</span>
     </div>
 
-    <!-- Palette de symboles (boutons) -->
+    <!-- Palette de symboles -->
     <div class="controls" id="symbolBar" style="display:none">
       <div class="palette" id="symbolPalette" aria-label="Symboles">
         <span class="chip" data-sym="">(vide)</span>
@@ -74,18 +75,24 @@
       </div>
     </div>
 
-    <!-- Palette de couleurs (boutons) -->
+    <!-- Palettes DROPS -->
     <div class="controls" id="colorBar" style="display:none">
-      <div class="palette" id="colorPalette" aria-label="Couleurs">
-        <div class="sw" data-col="#000000" style="background:#000"></div>
-        <div class="sw" data-col="#ffffff" style="background:#fff"></div>
-        <div class="sw" data-col="#a05a7e" style="background:#a05a7e"></div>
-        <div class="sw" data-col="#c0392b" style="background:#c0392b"></div>
-        <div class="sw" data-col="#27ae60" style="background:#27ae60"></div>
-        <div class="sw" data-col="#2980b9" style="background:#2980b9"></div>
-        <div class="sw" data-col="#f1c40f" style="background:#f1c40f"></div>
-        <input type="color" id="picker" value="#a05a7e" style="margin-left:8px">
-      </div>
+      <label>Gamme DROPS
+        <select id="lineSelect">
+          <option>Merino Extra Fine</option>
+          <option>Nepal</option>
+          <option>Air</option>
+          <option>Nord</option>
+          <option>Lima</option>
+          <option>Karisma</option>
+          <option>Alaska</option>
+          <option>Sky</option>
+          <option>Cotton Merino</option>
+        </select>
+      </label>
+      <div class="palette" id="colorPalette" aria-label="Couleurs"></div>
+      <input type="color" id="picker" value="#a05a7e" title="Couleur perso" />
+      <span class="hint">Couleurs approximatives inspirées des nuanciers DROPS.</span>
     </div>
 
     <div class="grid-wrap">
@@ -99,18 +106,68 @@
 
   <section>
     <h2>3) Rendu</h2>
+    <div class="controls">
+      <div class="seg">
+        <button id="style-flat"  class="active">Style plat</button>
+        <button id="style-wool">Laine douce</button>
+      </div>
+      <span class="hint">“Laine douce” ajoute relief, micro-fibres et petites variations de lumière.</span>
+    </div>
     <canvas id="knitCanvas" width="640" height="640"></canvas>
     <div class="controls">
       <button class="btn" id="renderBtn">Actualiser le rendu</button>
       <button class="btn" id="exportRender">Exporter le rendu (PNG)</button>
     </div>
-    <p class="hint">Prochaines étapes possibles : texture laine réaliste, PDF patron, torsades, répétitions, etc.</p>
   </section>
 </main>
 
 <script>
-  // --- Données de grille
-  let grid=[], mode='knit', painting=false, currentColor='#a05a7e', currentSymbol='';
+  /* ===================== PALETTES (approximations) ===================== */
+  const DROPS = {
+    "Merino Extra Fine": [
+      ["02 Noir","#2c2c2c"],["01 Blanc","#f5f5f5"],["17 Gris moyen","#9aa0a6"],
+      ["37 Gris clair","#c8ccd0"],["40 Rose poudre","#e7c0cc"],["30 Moutarde","#c7a21e"],
+      ["24 Rouge brique","#a33b34"],["48 Bleu pétrole","#2f6b73"],["34 Vert sapin","#2f5e40"]
+    ],
+    "Nepal": [
+      ["0506 Noir","#2b2b2b"],["8903 Perle","#dadada"],["7120 Gris clair","#c7c7c7"],
+      ["0612 Beige","#c7b49a"],["2920 Rouge","#b2322e"],["7238 Vert forêt","#2f4f3a"],
+      ["4305 Bleu jean","#3d5c84"],["4434 Violet","#6e4b84"]
+    ],
+    "Air": [
+      ["01 Naturel","#efeae3"],["02 Gris perle","#d8d6d2"],["03 Gris moyen","#a6a5a3"],
+      ["26 Rose poudré","#e9c8cf"],["07 Moutarde","#c7a121"],["09 Sauge","#8ea98b"],
+      ["11 Bleu orage","#56697a"]
+    ],
+    "Nord": [
+      ["01 Naturel","#eee9e2"],["03 Perle","#dad7d2"],["07 Noir","#2b2b2b"],
+      ["16 Rose poudré","#e7c0cb"],["05 Moutarde","#c5a01b"],["19 Marine","#1f2d4a"],
+      ["18 Vert bouteille","#2b533b"]
+    ],
+    "Lima": [
+      ["9010 Perle","#d7d7d7"],["4305 Jean","#3e5b86"],["0701 Gris clair","#c9c9c9"],
+      ["2923 Rouge rouille","#a3472f"],["7810 Vert sapin","#2b513a"],["1101 Blanc","#f6f6f6"]
+    ],
+    "Karisma": [
+      ["01 Blanc","#f7f7f7"],["16 Gris moyen","#a1a6ac"],["53 Noir","#2b2b2b"],
+      ["52 Bordeaux","#6f2731"],["37 Marine","#23304d"],["11 Moutarde","#c39b1d"]
+    ],
+    "Alaska": [
+      ["02 Noir","#2a2a2a"],["03 Gris perle","#d6d6d6"],["54 Vert mousse","#7d8f75"],
+      ["10 Rouge","#a12b2b"],["47 Bleu pétrole","#2b6a73"],["01 Naturel","#f1ede6"]
+    ],
+    "Sky": [
+      ["01 Naturel","#efeae2"],["04 Perle","#d7d5cf"],["05 Gris moyen","#a8a6a3"],
+      ["08 Pétrole","#2f6a72"],["10 Rose poudre","#e7c1cb"],["11 Sauge","#8ea98c"]
+    ],
+    "Cotton Merino": [
+      ["01 Naturel","#f1ece6"],["03 Gris clair","#d3d1cc"],["05 Noir","#2a2a2a"],
+      ["24 Rose poudre","#e7c0cc"],["18 Marine","#23314d"],["19 Camel","#b69162"]
+    ]
+  };
+
+  /* ===================== GRILLE ===================== */
+  let grid=[], mode='knit', painting=false, currentColor='#a05a7e', currentSymbol='', renderStyle='flat';
   const gridEl=document.getElementById('grid'), rowsEl=document.getElementById('rows'), colsEl=document.getElementById('cols'), countEl=document.getElementById('count');
 
   function initGrid(r,c){ grid=Array.from({length:r},()=>Array.from({length:c},()=>({purl:false,sym:"",col:null}))); }
@@ -135,7 +192,7 @@
     countEl.textContent=`Total: ${total} • Envers: ${p} • Symboles: ${s} • Couleurs: ${c}`;
   }
 
-  // --- Modes
+  // Modes
   const symbolBar=document.getElementById('symbolBar'), colorBar=document.getElementById('colorBar');
   document.getElementById('mode-knit').onclick = ()=> setMode('knit');
   document.getElementById('mode-symbol').onclick = ()=> setMode('symbol');
@@ -147,23 +204,36 @@
     colorBar.style.display  = m==='color' ?'':'none';
   }
 
-  // --- Palettes cliquables
-  // symboles
+  // Symboles (pills)
   document.getElementById('symbolPalette').addEventListener('click', e=>{
     const chip=e.target.closest('.chip'); if(!chip) return;
     document.querySelectorAll('#symbolPalette .chip').forEach(x=>x.classList.remove('active'));
     chip.classList.add('active'); currentSymbol = chip.dataset.sym || '';
   });
-  // couleurs
+
+  // Couleurs DROPS
+  const lineSelect=document.getElementById('lineSelect');
+  const colorPalette=document.getElementById('colorPalette');
   const picker=document.getElementById('picker');
-  document.getElementById('colorPalette').addEventListener('click', e=>{
+
+  function loadPalette(line){
+    colorPalette.innerHTML='';
+    (DROPS[line]||[]).forEach(([name,hex],i)=>{
+      const sw=document.createElement('div'); sw.className='sw'; sw.title=name; sw.style.background=hex; sw.dataset.col=hex;
+      if(i===0){ sw.classList.add('active'); currentColor=hex; }
+      colorPalette.appendChild(sw);
+    });
+  }
+  loadPalette(lineSelect.value);
+  lineSelect.addEventListener('change', ()=> loadPalette(lineSelect.value));
+  colorPalette.addEventListener('click', e=>{
     const sw=e.target.closest('.sw'); if(!sw) return;
     document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active'));
     sw.classList.add('active'); currentColor = sw.dataset.col;
   });
   picker.addEventListener('input', e=>{ currentColor=e.target.value; document.querySelectorAll('#colorPalette .sw').forEach(x=>x.classList.remove('active')); });
 
-  // --- Peinture cellules
+  // Peinture
   function applyCell(td){
     const r=+td.dataset.r,c=+td.dataset.c, cell=grid[r][c];
     if(mode==='knit'){ cell.purl=!cell.purl; }
@@ -188,12 +258,12 @@
   document.addEventListener('mouseup', ()=> painting=false);
   document.addEventListener('touchend', ()=> painting=false);
 
-  // --- Actions grille
+  // Actions
   document.getElementById('build').onclick=()=>{ const r=Math.max(1,Math.min(240,parseInt(rowsEl.value||16))); const c=Math.max(1,Math.min(240,parseInt(colsEl.value||16))); initGrid(r,c); buildTable(); };
   document.getElementById('clear').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j]={purl:false,sym:"",col:null}; buildTable(); };
   document.getElementById('invert').onclick=()=>{ for(let i=0;i<grid.length;i++)for(let j=0;j<grid[0].length;j++)grid[i][j].purl=!grid[i][j].purl; buildTable(); };
 
-  // --- Export grille
+  // Export grille
   document.getElementById('exportGrid').onclick=()=>{
     if(!grid.length) return; const S=30, rows=grid.length, cols=grid[0].length;
     const can=document.createElement('canvas'); can.width=cols*S; can.height=rows*S; const ctx=can.getContext('2d');
@@ -204,20 +274,115 @@
     }} const a=document.createElement('a'); a.download='grille.png'; a.href=can.toDataURL('image/png'); a.click();
   };
 
-  // --- Rendu simple (même que version précédente)
+  /* ===================== RENDU ===================== */
   const knitCanvas=document.getElementById('knitCanvas'), rctx=knitCanvas.getContext('2d');
+  document.getElementById('style-flat').onclick = ()=>{ renderStyle='flat'; toggleStyle(); drawKnit();};
+  document.getElementById('style-wool').onclick = ()=>{ renderStyle='wool'; toggleStyle(); drawKnit();};
+  function toggleStyle(){
+    document.getElementById('style-flat').classList.toggle('active', renderStyle==='flat');
+    document.getElementById('style-wool').classList.toggle('active', renderStyle==='wool');
+  }
+
+  // petit générateur de “bruit” doux (fibres)
+  function noise(ctx, x,y,w,h, alpha=0.08){
+    const img=ctx.getImageData(x,y,w,h); const d=img.data;
+    for(let i=0;i<d.length;i+=4){
+      const n=(Math.random()-0.5)*255*alpha;
+      d[i]+=n; d[i+1]+=n; d[i+2]+=n;
+    }
+    ctx.putImageData(img,x,y);
+  }
+  // assombrir/éclaircir une couleur hex
+  function shade(hex, amt){
+    const c=hex.startsWith('#')?hex.slice(1):hex; const n=parseInt(c,16);
+    let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+    r=Math.max(0,Math.min(255,r+amt)); g=Math.max(0,Math.min(255,g+amt)); b=Math.max(0,Math.min(255,b+amt));
+    return `rgb(${r},${g},${b})`;
+  }
+
   function drawKnit(){
     if(!grid.length) return; const rows=grid.length, cols=grid[0].length;
-    const cellW=Math.max(8,Math.floor(Math.min(knitCanvas.width/cols, knitCanvas.height/rows)));
+    const cellW=Math.max(10,Math.floor(Math.min(knitCanvas.width/cols, knitCanvas.height/rows)));
     knitCanvas.width=cols*cellW; knitCanvas.height=rows*cellW; rctx.clearRect(0,0,knitCanvas.width,knitCanvas.height);
-    for(let i=0;i<rows;i++){ for(let j=0;j<cols;j++){ const x=j*cellW,y=i*cellW,cell=grid[i][j],bg=cell.col||'#dddddd';
-      rctx.fillStyle=bg; rctx.fillRect(x,y,cellW,cellW);
-      rctx.strokeStyle='#333'; rctx.lineWidth=Math.max(1, cellW*0.07);
-      if(cell.purl){ rctx.beginPath(); rctx.moveTo(x+cellW*.2,y+cellW*.55); rctx.bezierCurveTo(x+cellW*.35,y+cellW*.75,x+cellW*.65,y+cellW*.75,x+cellW*.8,y+cellW*.55); rctx.stroke(); }
-      else { rctx.beginPath(); rctx.moveTo(x+cellW*.2,y+cellW*.25); rctx.lineTo(x+cellW*.5,y+cellW*.75); rctx.lineTo(x+cellW*.8,y+cellW*.25); rctx.stroke(); }
-      if(cell.sym){ rctx.fillStyle='#111'; rctx.font=`${Math.floor(cellW*.35)}px sans-serif`; rctx.textAlign='center'; rctx.textBaseline='middle'; rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellW/2); }
-    }}
+
+    for(let i=0;i<rows;i++){
+      for(let j=0;j<cols;j++){
+        const x=j*cellW, y=i*cellW; const cell=grid[i][j];
+        const base = cell.col || '#d8d8d8';
+
+        if(renderStyle==='flat'){
+          rctx.fillStyle = base; rctx.fillRect(x,y,cellW,cellW);
+          rctx.strokeStyle='#333'; rctx.lineWidth=Math.max(1, cellW*0.07);
+          if(cell.purl){
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.2,y+cellW*.55);
+            rctx.bezierCurveTo(x+cellW*.35,y+cellW*.75,x+cellW*.65,y+cellW*.75,x+cellW*.8,y+cellW*.55);
+            rctx.stroke();
+          } else {
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.2,y+cellW*.25);
+            rctx.lineTo(x+cellW*.5,y+cellW*.78);
+            rctx.lineTo(x+cellW*.8,y+cellW*.25);
+            rctx.stroke();
+          }
+        } else {
+          // --- “Laine douce” : dégradé + relief + fibres ---
+          // dégradé subtile (haut clair -> bas plus sombre)
+          const grad=rctx.createLinearGradient(x,y,x,y+cellW);
+          grad.addColorStop(0, shade(base, +18));
+          grad.addColorStop(0.5, base);
+          grad.addColorStop(1, shade(base, -18));
+          rctx.fillStyle=grad; rctx.fillRect(x,y,cellW,cellW);
+
+          // relief : endroit = deux boudins en V ; envers = pont doux
+          rctx.lineWidth=Math.max(1, cellW*0.08);
+          rctx.lineCap='round';
+          if(cell.purl){
+            rctx.strokeStyle=shade(base,-60);
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.2, y+cellW*.55);
+            rctx.bezierCurveTo(x+cellW*.35,y+cellW*.78, x+cellW*.65,y+cellW*.78, x+cellW*.8,y+cellW*.55);
+            rctx.stroke();
+            // petit highlight au-dessus
+            rctx.strokeStyle=shade(base,+60);
+            rctx.lineWidth=Math.max(1, cellW*0.03);
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.25, y+cellW*.48);
+            rctx.bezierCurveTo(x+cellW*.4,y+cellW*.65, x+cellW*.6,y+cellW*.65, x+cellW*.75,y+cellW*.48);
+            rctx.stroke();
+          }else{
+            // deux brins du V
+            rctx.strokeStyle=shade(base,-70);
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.25,y+cellW*.22);
+            rctx.lineTo(x+cellW*.5 ,y+cellW*.78);
+            rctx.lineTo(x+cellW*.75,y+cellW*.22);
+            rctx.stroke();
+            // liseré clair
+            rctx.strokeStyle=shade(base,+70);
+            rctx.lineWidth=Math.max(1, cellW*0.03);
+            rctx.beginPath();
+            rctx.moveTo(x+cellW*.28,y+cellW*.22);
+            rctx.lineTo(x+cellW*.5 ,y+cellW*.72);
+            rctx.lineTo(x+cellW*.72,y+cellW*.22);
+            rctx.stroke();
+          }
+
+          // micro-fibres (bruit doux)
+          noise(rctx, x,y,cellW,cellW, 0.06);
+        }
+
+        // symboles (lace/déc.)
+        if(cell.sym){
+          rctx.fillStyle='#111';
+          rctx.font = `${Math.floor(cellW*0.35)}px sans-serif`;
+          rctx.textAlign='center'; rctx.textBaseline='middle';
+          rctx.fillText(cell.sym==="no"?"×":cell.sym, x+cellW/2, y+cellW/2);
+        }
+      }
+    }
   }
+
   document.getElementById('renderBtn').onclick=drawKnit;
   document.getElementById('exportRender').onclick=()=>{ drawKnit(); const a=document.createElement('a'); a.download='rendu-tricot.png'; a.href=knitCanvas.toDataURL('image/png'); a.click(); };
 
